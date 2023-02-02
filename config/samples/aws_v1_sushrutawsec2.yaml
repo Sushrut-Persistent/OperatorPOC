@@ -1,0 +1,12 @@
+apiVersion: aws.sushrut.com/v1
+kind: SushrutAWSEC2
+metadata:
+  labels:
+    app.kubernetes.io/name: sushrutawsec2
+    app.kubernetes.io/instance: sushrutawsec2-sample
+    app.kubernetes.io/part-of: operatorpoc
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operatorpoc
+  name: sushrutawsec2-sample
+spec:
+  # TODO(user): Add fields here

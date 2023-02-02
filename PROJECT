@@ -1,0 +1,29 @@
+domain: sushrut.com
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: operatorpoc
+repo: github.com/Sushrut-Persistent/OperatorPOC
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sushrut.com
+  group: aws
+  kind: SushrutAWSEC2
+  path: github.com/Sushrut-Persistent/OperatorPOC/apis/aws/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sushrut.com
+  group: aws
+  kind: SushrutAWSManager
+  path: github.com/Sushrut-Persistent/OperatorPOC/apis/aws/v1
+  version: v1
+version: "3"
