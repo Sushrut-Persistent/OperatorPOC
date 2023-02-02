@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +30,9 @@ type SushrutAWSManagerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of SushrutAWSManager. Edit sushrutawsmanager_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Image           string           `json:"image,omitempty"`
+	ImagePullPolicy v1.PullPolicy    `json:"imagePullPolicy,omitempty"`
+	RestartPolicy   v1.RestartPolicy `json:"restartPolicy,omitempty"`
 }
 
 // SushrutAWSManagerStatus defines the observed state of SushrutAWSManager

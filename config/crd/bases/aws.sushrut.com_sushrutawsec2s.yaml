@@ -1,0 +1,66 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
+  name: sushrutawsec2s.aws.sushrut.com
+spec:
+  group: aws.sushrut.com
+  names:
+    kind: SushrutAWSEC2
+    listKind: SushrutAWSEC2List
+    plural: sushrutawsec2s
+    singular: sushrutawsec2
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: SushrutAWSEC2 is the Schema for the sushrutawsec2s API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SushrutAWSEC2Spec defines the desired state of SushrutAWSEC2
+            properties:
+              command:
+                type: string
+              image:
+                description: Foo is an example field of SushrutAWSEC2. Edit sushrutawsec2_types.go
+                  to remove/update
+                type: string
+              imagePullPolicy:
+                description: PullPolicy describes a policy for if/when to pull a container
+                  image
+                type: string
+              restartPolicy:
+                description: RestartPolicy describes how the container should be restarted.
+                  Only one of the following restart policies may be specified. If
+                  none of the following policies is specified, the default one is
+                  RestartPolicyAlways.
+                type: string
+              tagKey:
+                type: string
+              tagVal:
+                type: string
+            type: object
+          status:
+            description: SushrutAWSEC2Status defines the observed state of SushrutAWSEC2
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

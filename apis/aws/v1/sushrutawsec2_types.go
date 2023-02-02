@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,7 +30,12 @@ type SushrutAWSEC2Spec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of SushrutAWSEC2. Edit sushrutawsec2_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Image           string           `json:"image,omitempty"`
+	ImagePullPolicy v1.PullPolicy    `json:"imagePullPolicy,omitempty"`
+	RestartPolicy   v1.RestartPolicy `json:"restartPolicy,omitempty"`
+	Command         string           `json:"command,omitempty"`
+	TagKey          string           `json:"tagKey,omitempty"`
+	TagValue        string           `json:"tagVal,omitempty"`
 }
 
 // SushrutAWSEC2Status defines the observed state of SushrutAWSEC2
