@@ -10,7 +10,7 @@ metadata:
   name: sushrutawsec2-sample
 spec:
   # TODO(user): Add fields here
-  image: "github.com/Sushrut-Persistent/aws-vmcreate"
+  image: "github.com/sushrut-persistent/aws-vmcreate"
   imagePullPolicy: Always
   restartPolicy: OnFailure
   command: "create"

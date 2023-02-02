@@ -10,6 +10,6 @@ metadata:
   name: sushrutawsmanager-sample
 spec:
   # TODO(user): Add fields here
-  image: "github.com/Sushrut-Persistent/aws-vmstate"
+  image: "github.com/sushrut-persistent/aws-vmstate"
   imagePullPolicy: Always
   restartPolicy: Always
