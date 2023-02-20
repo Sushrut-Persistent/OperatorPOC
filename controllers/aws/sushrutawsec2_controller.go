@@ -276,7 +276,7 @@ func (r *SushrutAWSEC2Reconciler) finalizeSushrutAWSEC2(ctx context.Context, aws
 	if err != nil && errors.IsNotFound(err) {
 
 		awsEC2.Status.ec2Status = "Terminating"
-		log.Info(awsEC2.Status.EC2Status)
+		log.Info(awsEC2.Status.ec2Status)
 		r.recorder.Event(awsEC2, corev1.EventTypeNormal, "Terminating", fmt.Sprintf("Terminating EC2 Instance"))
 		err = r.Client.Status().Update(ctx, awsEC2)
 		if err != nil {
@@ -302,7 +302,7 @@ func (r *SushrutAWSEC2Reconciler) finalizeSushrutAWSEC2(ctx context.Context, aws
 		}
 		// job created successfully - return and requeue
 
-		awsEC2.Status.EC2Status = "Terminated"
+		awsEC2.Status.ec2Status = "Terminated"
 		log.Info("EC2 Instances Terminated")
 		r.recorder.Event(awsEC2, corev1.EventTypeNormal, "Terminated", fmt.Sprintf("EC2 Instances Terminated"))
 		err = r.Client.Status().Update(ctx, awsEC2)
