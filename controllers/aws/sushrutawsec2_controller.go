@@ -18,11 +18,15 @@ package aws
 
 import (
 	"context"
+	"fmt"
+	// "encoding/json"
+	// "io/ioutil"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,8 +41,15 @@ import (
 // SushrutAWSEC2Reconciler reconciles a SushrutAWSEC2 object
 type SushrutAWSEC2Reconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	recorder record.EventRecorder
 }
+
+// Config struct to read configmap json data
+// type Config struct {
+// 	InstanceType string `json:"instance-type"`
+// 	ImageID      string `json:"image-id"`
+// }
 
 //+kubebuilder:rbac:groups=aws.sushrut.com,resources=sushrutawsec2s,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=aws.sushrut.com,resources=sushrutawsec2s/status,verbs=get;update;patch
@@ -61,13 +72,13 @@ const SushrutAWSEC2Finalizer = "aws.sushrut.com/finalizer"
 func (r *SushrutAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	//_ = log.FromContext(ctx)
 	log := ctrllog.FromContext(ctx)
-	//log := r.Log.WithValues("AnandAWSEC2", req.NamespacedName)
+	//log := r.Log.WithValues("SushrutAWSEC2", req.NamespacedName)
 	log.Info("Reconciling SushrutAWSEC2s CRs")
 
-	// Fetch the AnandAWSEC2 CR
+	// Fetch the SushrutAWSEC2 CR
 	//awsEC2, err := services.FetchAWSEC2CR(req.Name, req.Namespace)
 
-	// Fetch the AnandAWSEC2 instance
+	// Fetch the SushrutAWSEC2 instance
 	awsEC2 := &awsv1.SushrutAWSEC2{}
 	//ctrl.SetControllerReference(awsEC2, awsEC2, r.Scheme)
 	log.Info(req.NamespacedName.Name)
@@ -86,6 +97,15 @@ func (r *SushrutAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
+	awsEC2.Status.ec2Status = "Initialized"
+	log.Info(awsEC2.Status.ec2Status)
+	r.recorder.Event(awsEC2, corev1.EventTypeNormal, "Initialized", "Initialized Reconciliation")
+	err = r.Client.Status().Update(ctx, awsEC2)
+	if err != nil {
+		log.Error(err, "Failed to update status")
+		return ctrl.Result{}, err
+	}
+
 	// Add const values for mandatory specs ( if left blank)
 	// log.Info("Adding awsEC2 mandatory specs")
 	// utils.AddBackupMandatorySpecs(awsEC2)
@@ -97,13 +117,41 @@ func (r *SushrutAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Job
 		job := r.JobForSushrutAWSEC2(awsEC2, "create")
+
+		awsEC2.Status.ec2Status = "CreatingInstance"
 		log.Info("Creating a new Job", "job.Namespace", job.Namespace, "job.Name", job.Name)
+		r.recorder.Event(awsEC2, corev1.EventTypeNormal, "CreatingInstance", fmt.Sprintf("Creating EC2 instance, Namespace: %s, Name: %s", awsEC2.Namespace, awsEC2.Name))
+		err = r.Client.Status().Update(ctx, awsEC2)
+		if err != nil {
+			log.Error(err, "Failed to update status")
+			return ctrl.Result{}, err
+		}
+
 		err = r.Client.Create(ctx, job)
 		if err != nil {
+			awsEC2.Status.ec2Status = "Failed"
 			log.Error(err, "Failed to create new Job", "job.Namespace", job.Namespace, "job.Name", job.Name)
+			r.recorder.Event(awsEC2, corev1.EventTypeWarning, "InstanceCreationFailed", fmt.Sprintf("EC2 instance Creation Failed, Name: %s", awsEC2.Name))
+			err = r.Client.Status().Update(ctx, awsEC2)
+			if err != nil {
+				log.Error(err, "Failed to update status")
+				return ctrl.Result{}, err
+			}
+
 			return ctrl.Result{}, err
 		}
 		// job created successfully - return and requeue
+
+		awsEC2.Status.ec2Status = "Created"
+		log.Info("EC2 Instance Created")
+		r.recorder.Event(awsEC2, corev1.EventTypeNormal, "Created", fmt.Sprintf("EC2 Instance Created, Namespace: %s, Name: %s", awsEC2.Namespace, awsEC2.Name))
+		err = r.Client.Status().Update(ctx, awsEC2)
+		if err != nil {
+			log.Error(err, "Failed to update status")
+			return ctrl.Result{}, err
+		}
+		// Sleeping just for status change update
+		time.Sleep(300 * time.Second)
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get job")
@@ -162,7 +210,7 @@ func (r *SushrutAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{Requeue: true}, nil
 	}*/
 
-	// Update the AnandAWSEC2 status
+	// Update the SushrutAWSEC2 status
 	// TODO: Define what needs to be added in status. Currently adding just instanceIds
 	/*if !reflect.DeepEqual(currentInstanceIds, awsEC2.Status.VMStartStatus) ||
 		!reflect.DeepEqual(currentInstanceIds, awsEC2.Status.VMStopStatus) {
@@ -179,7 +227,7 @@ func (r *SushrutAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	isAWSEC2MarkedToBeDeleted := awsEC2.GetDeletionTimestamp() != nil
 	if isAWSEC2MarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer(awsEC2, SushrutAWSEC2Finalizer) {
-			// Run finalization logic for AnandAWSEC2Finalizer. If the
+			// Run finalization logic for SushrutAWSEC2Finalizer. If the
 			// finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			log.Info(awsEC2.Name)
@@ -188,7 +236,7 @@ func (r *SushrutAWSEC2Reconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				return ctrl.Result{}, err
 			}
 
-			// Remove AnandAWSEC2Finalizer. Once all finalizers have been
+			// Remove SushrutAWSEC2Finalizer. Once all finalizers have been
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(awsEC2, SushrutAWSEC2Finalizer)
 			err := r.Client.Update(ctx, awsEC2)
@@ -221,20 +269,48 @@ func (r *SushrutAWSEC2Reconciler) finalizeSushrutAWSEC2(ctx context.Context, aws
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
 	log := ctrllog.FromContext(ctx)
-	log.Info("Successfully finalized AnandAWSEC2")
+	log.Info("Successfully finalized SushrutAWSEC2")
 	found := &batchv1.Job{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: awsEC2.Name + "delete", Namespace: awsEC2.Namespace}, found)
 	//log.Info(*found.)
 	if err != nil && errors.IsNotFound(err) {
+
+		awsEC2.Status.ec2Status = "Terminating"
+		log.Info(awsEC2.Status.EC2Status)
+		r.recorder.Event(awsEC2, corev1.EventTypeNormal, "Terminating", fmt.Sprintf("Terminating EC2 Instance"))
+		err = r.Client.Status().Update(ctx, awsEC2)
+		if err != nil {
+			log.Error(err, "Failed to update status")
+			return ctrl.Result{}, err
+		}
+
 		// Define a new job
 		job := r.JobForSushrutAWSEC2(awsEC2, "delete")
 		log.Info("Creating a new Job", "job.Namespace", job.Namespace, "job.Name", job.Name)
 		err = r.Client.Create(ctx, job)
 		if err != nil {
+			awsEC2.Status.ec2Status = "Failed"
 			log.Error(err, "Failed to create new Job", "job.Namespace", job.Namespace, "job.Name", job.Name)
+			r.recorder.Event(awsEC2, corev1.EventTypeWarning, "InstanceCreationFailed", fmt.Sprintf("EC2 instance Creation Failed, Name: %s", awsEC2.Name))
+			err = r.Client.Status().Update(ctx, awsEC2)
+			if err != nil {
+				log.Error(err, "Failed to update status")
+				return ctrl.Result{}, err
+			}
+
 			return err
 		}
 		// job created successfully - return and requeue
+
+		awsEC2.Status.EC2Status = "Terminated"
+		log.Info("EC2 Instances Terminated")
+		r.recorder.Event(awsEC2, corev1.EventTypeNormal, "Terminated", fmt.Sprintf("EC2 Instances Terminated"))
+		err = r.Client.Status().Update(ctx, awsEC2)
+		if err != nil {
+			log.Error(err, "Failed to update status")
+			return ctrl.Result{}, err
+		}
+
 		return nil
 	} else if err != nil {
 		log.Error(err, "Failed to get job")
@@ -245,6 +321,17 @@ func (r *SushrutAWSEC2Reconciler) finalizeSushrutAWSEC2(ctx context.Context, aws
 
 // Job Spec
 func (r *SushrutAWSEC2Reconciler) JobForSushrutAWSEC2(awsEC2 *awsv1.SushrutAWSEC2, command string) *batchv1.Job {
+
+	// log := ctrllog.FromContext(ctx)
+
+	// var config Config
+
+	// content, err := ioutil.ReadFile("/opt/config.json")
+	// if err != nil {
+	// 	log.Error("Error reading file:", err)
+	// 	return
+	// }
+
 	jobName := awsEC2.Name + command
 	job := &batchv1.Job{
 		ObjectMeta: v1.ObjectMeta{
@@ -255,13 +342,27 @@ func (r *SushrutAWSEC2Reconciler) JobForSushrutAWSEC2(awsEC2 *awsv1.SushrutAWSEC
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{{
+						Name: "aws-configmap",
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: awsEC2.Spec.ConfigMapName,
+								},
+							},
+						},
+					}},
 					Containers: []corev1.Container{{
 						Name:  awsEC2.Name,
 						Image: awsEC2.Spec.Image,
+						VolumeMounts: []corev1.VolumeMount{{
+							Name:      "aws-configmap",
+							MountPath: "/opt/config",
+						}},
 						Env: []corev1.EnvVar{
 							{
 								Name:  "ec2_command",
-								Value: awsEC2.Spec.Command,
+								Value: command,
 							},
 							{
 								Name:  "ec2_tag_key",
@@ -271,6 +372,28 @@ func (r *SushrutAWSEC2Reconciler) JobForSushrutAWSEC2(awsEC2 *awsv1.SushrutAWSEC
 								Name:  "ec2_tag_value",
 								Value: awsEC2.Spec.TagValue,
 							},
+							// {
+							// 	Name: "ec2_instance_type",
+							// 	ValueFrom: &corev1.EnvVarSource{
+							// 		ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							// 			LocalObjectReference: corev1.LocalObjectReference{
+							// 				Name: "aws-configmap",
+							// 			},
+							// 			Key: "instance-type",
+							// 		},
+							// 	},
+							// },
+							// {
+							// 	Name: "ec2_image_id",
+							// 	ValueFrom: &corev1.EnvVarSource{
+							// 		ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							// 			LocalObjectReference: corev1.LocalObjectReference{
+							// 				Name: "aws-configmap",
+							// 			},
+							// 			Key: "image-id",
+							// 		},
+							// 	},
+							// },
 							{
 								Name: "AWS_ACCESS_KEY_ID",
 								ValueFrom: &corev1.EnvVarSource{
@@ -318,14 +441,15 @@ func (r *SushrutAWSEC2Reconciler) JobForSushrutAWSEC2(awsEC2 *awsv1.SushrutAWSEC
 
 func AWSEC2Labels(v *awsv1.SushrutAWSEC2, tier string) map[string]string {
 	return map[string]string{
-		"app":            "SushrutAWSEC2",
-		"AnandAWSEC2_cr": v.Name,
-		"tier":           tier,
+		"app":              "SushrutAWSEC2",
+		"SushrutAWSEC2_cr": v.Name,
+		"tier":             tier,
 	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SushrutAWSEC2Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.recorder = mgr.GetEventRecorderFor("SushrutAWSEC2")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&awsv1.SushrutAWSEC2{}).
 		Owns(&batchv1.Job{}).

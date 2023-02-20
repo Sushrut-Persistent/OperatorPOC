@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-configmap
+  namespace: operatorpoc-system
+# data:
+#   instance-type: "t2.nano"
+#   image-id: "ami-0d0ca2066b861631c"
+data:
+  config.json: |
+    {
+      "instance-type": "t2.nano",
+      "image-id": "ami-0d0ca2066b861631c"
+    }

@@ -33,6 +33,7 @@ type SushrutAWSManagerSpec struct {
 	Image           string           `json:"image,omitempty"`
 	ImagePullPolicy v1.PullPolicy    `json:"imagePullPolicy,omitempty"`
 	RestartPolicy   v1.RestartPolicy `json:"restartPolicy,omitempty"`
+	// Name            string           `json:"containers.name,omitempty"`
 }
 
 // SushrutAWSManagerStatus defines the observed state of SushrutAWSManager

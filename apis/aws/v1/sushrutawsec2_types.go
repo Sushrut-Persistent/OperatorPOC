@@ -33,15 +33,18 @@ type SushrutAWSEC2Spec struct {
 	Image           string           `json:"image,omitempty"`
 	ImagePullPolicy v1.PullPolicy    `json:"imagePullPolicy,omitempty"`
 	RestartPolicy   v1.RestartPolicy `json:"restartPolicy,omitempty"`
-	Command         string           `json:"command,omitempty"`
-	TagKey          string           `json:"tagKey,omitempty"`
-	TagValue        string           `json:"tagVal,omitempty"`
+	// Command         string           `json:"command,omitempty"`
+	TagKey        string `json:"tagKey,omitempty"`
+	TagValue      string `json:"tagVal,omitempty"`
+	ConfigMapName string `json:"configMapName,omitempty"`
+	// Name            string           `json:"containers.name,omitempty"`
 }
 
 // SushrutAWSEC2Status defines the observed state of SushrutAWSEC2
 type SushrutAWSEC2Status struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	ec2Status string `json:"ec2status"`
 }
 
 //+kubebuilder:object:root=true

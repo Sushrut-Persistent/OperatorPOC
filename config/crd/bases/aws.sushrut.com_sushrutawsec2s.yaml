@@ -35,7 +35,7 @@ spec:
           spec:
             description: SushrutAWSEC2Spec defines the desired state of SushrutAWSEC2
             properties:
-              command:
+              configMapName:
                 type: string
               image:
                 description: Foo is an example field of SushrutAWSEC2. Edit sushrutawsec2_types.go
@@ -52,12 +52,21 @@ spec:
                   RestartPolicyAlways.
                 type: string
               tagKey:
+                description: Command         string           `json:"command,omitempty"`
                 type: string
               tagVal:
                 type: string
             type: object
           status:
             description: SushrutAWSEC2Status defines the observed state of SushrutAWSEC2
+            properties:
+              ec2status:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+            required:
+            - ec2status
             type: object
         type: object
     served: true

@@ -168,23 +168,23 @@ func (r *SushrutAWSManagerReconciler) DeploymentForAWSManager(ctx context.Contex
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					/*Volumes: []corev1.Volume{{
-						Name: "config",
+					Volumes: []corev1.Volume{{
+						Name: "aws-configmap",
 						VolumeSource: corev1.VolumeSource{
 							ConfigMap: &corev1.ConfigMapVolumeSource{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "config",
+									Name: "aws-configmap",
 								},
 							},
 						},
-					}},*/
+					}},
 					Containers: []corev1.Container{{
 						Name:  awsManager.Name,
 						Image: awsManager.Spec.Image,
-						/*VolumeMounts: []corev1.VolumeMount{{
+						VolumeMounts: []corev1.VolumeMount{{
 							Name:      "config",
 							MountPath: "/opt/config",
-						}},*/
+						}},
 						Env: []corev1.EnvVar{
 							{
 								Name: "AWS_ACCESS_KEY_ID",
@@ -226,7 +226,7 @@ func (r *SushrutAWSManagerReconciler) DeploymentForAWSManager(ctx context.Contex
 			}, // PodTemplateSpec
 		}, // Spec
 	} // Deployment
-	// Set AnandAWSManager instance as the owner and controller
+	// Set SushrutAWSManager instance as the owner and controller
 	ctrl.SetControllerReference(awsManager, Deployment, r.Scheme)
 	return Deployment
 }
